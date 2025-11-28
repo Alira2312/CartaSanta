@@ -1,0 +1,2431 @@
+<!DOCTYPE html>
+<html lang="es" ng-app="cartaSantaApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎅 Carta a Santa - Interactivo</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f4c75 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Copos de nieve animados */
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            color: white;
+            font-size: 1.5em;
+            font-family: Arial;
+            text-shadow: 0 0 5px rgba(255,255,255,0.8);
+            animation: fall linear infinite;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+        
+        .container-custom {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .card-custom {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,250,240,0.98) 100%);
+            border-radius: 25px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            padding: 40px;
+            margin-bottom: 20px;
+            border: 3px solid rgba(255,215,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-custom::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .card-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header-title {
+            text-align: center;
+            font-family: 'Mountains of Christmas', cursive;
+            color: #c41e3a;
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 3rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .santa-icon {
+            text-align: center;
+            font-size: 5rem;
+            color: #c41e3a;
+            margin: 20px 0;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.8;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe6e6 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid #c41e3a;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+            border: none;
+            padding: 15px 35px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(196, 30, 58, 0.4);
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(196, 30, 58, 0.6);
+        }
+        
+        .btn-success-custom {
+            background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+            border: none;
+            padding: 15px 35px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(34, 139, 34, 0.4);
+        }
+        
+        .btn-success-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(34, 139, 34, 0.6);
+        }
+        
+        .btn-danger-custom {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-danger-custom:hover {
+            transform: translateY(-2px);
+        }
+        
+        .form-control-custom {
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+            padding: 15px 20px;
+            transition: all 0.3s;
+            background: white;
+            font-size: 1rem;
+        }
+        
+        .form-control-custom:focus {
+            border-color: #c41e3a;
+            box-shadow: 0 0 0 0.3rem rgba(196, 30, 58, 0.25);
+            background: #fff9e6;
+        }
+        
+        .item-card {
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe6e6 100%);
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12), inset 0 0 10px rgba(255, 215, 0, 0.1);
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .item-card::before {
+            content: '🎁';
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 1.5rem;
+            opacity: 0.3;
+        }
+        
+        .list-group-numbered {
+            list-style: none;
+            counter-reset: item-counter;
+        }
+        
+        .list-group-numbered > li {
+            counter-increment: item-counter;
+        }
+        
+        .list-group-numbered > li::before {
+            content: counter(item-counter) ".";
+            font-weight: 700;
+            color: #c41e3a;
+            font-size: 1.1rem;
+            margin-right: 10px;
+            min-width: 30px;
+        }
+        
+        .list-group-item {
+            border: 2px solid #ffd700 !important;
+            border-radius: 15px !important;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe6e6 100%) !important;
+        }
+        
+        .item-card::before {
+            content: '🎁';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 1.5rem;
+            opacity: 0.3;
+        }
+        
+        .item-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            margin: 10px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            border: 2px solid #ffd700;
+        }
+        
+        .link-preview {
+            background: white;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin: 8px 0 0 0;
+            border: 2px solid #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        /* Decoraciones navideñas */
+        .snowman-decoration {
+            position: fixed;
+            font-size: 4rem;
+            z-index: 5;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .reindeer-decoration {
+            position: fixed;
+            font-size: 3rem;
+            z-index: 5;
+            pointer-events: none;
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        
+        .snowman-left {
+            left: 20px;
+            bottom: 50px;
+            animation-delay: 0s;
+        }
+        
+        .snowman-right {
+            right: 20px;
+            bottom: 50px;
+            animation-delay: 1.5s;
+        }
+        
+        .reindeer-left {
+            left: 50px;
+            top: 100px;
+            animation-delay: 0.5s;
+        }
+        
+        .reindeer-right {
+            right: 50px;
+            top: 150px;
+            animation-delay: 2s;
+        }
+        
+        /* Pinos decorativos */
+        .pine-tree {
+            position: fixed;
+            z-index: 5;
+            pointer-events: none;
+            animation: sway 4s ease-in-out infinite;
+        }
+        
+        .pine-tree::before {
+            content: '🌲';
+            font-size: 4rem;
+            display: block;
+            filter: drop-shadow(0 0 10px rgba(34, 139, 34, 0.5));
+        }
+        
+        @keyframes sway {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-5px) rotate(-2deg); }
+            75% { transform: translateX(5px) rotate(2deg); }
+        }
+        
+        .pine-tree-left {
+            left: 10px;
+            bottom: 100px;
+            animation-delay: 0s;
+        }
+        
+        .pine-tree-right {
+            right: 10px;
+            bottom: 150px;
+            animation-delay: 2s;
+        }
+        
+        /* Estrellas como copos de nieve */
+        .star-snowflake {
+            position: fixed;
+            color: #FFD700;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.5);
+            animation: starFall linear infinite, starTwinkle 2s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1001;
+        }
+        
+        @keyframes starFall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+        
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
+        }
+        
+        /* Trineo decorativo */
+        .sleigh-decoration {
+            position: fixed;
+            font-size: 5rem;
+            z-index: 5;
+            pointer-events: none;
+            animation: sleighMove 8s ease-in-out infinite;
+        }
+        
+        .sleigh-decoration::before {
+            content: '🛷';
+            display: block;
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+        }
+        
+        @keyframes sleighMove {
+            0% { transform: translateX(-100px) translateY(0) rotate(-10deg); }
+            50% { transform: translateX(calc(100vw + 100px)) translateY(-50px) rotate(10deg); }
+            100% { transform: translateX(-100px) translateY(0) rotate(-10deg); }
+        }
+        
+        .sleigh-top {
+            top: 15%;
+            left: 0;
+        }
+        
+        /* Pinos dentro de las tarjetas */
+        .card-custom::after {
+            content: '🌲';
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            bottom: 20px;
+            right: 30px;
+            z-index: 1;
+            animation: gentleSway 5s ease-in-out infinite;
+        }
+        
+        @keyframes gentleSway {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(5deg); }
+        }
+        
+        /* Estrellas decorativas en las tarjetas */
+        .card-custom {
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+        }
+        
+        .star-decoration {
+            position: absolute;
+            font-size: 1.5rem;
+            color: #FFD700;
+            opacity: 0.3;
+            animation: starPulse 3s ease-in-out infinite;
+            z-index: 1;
+        }
+        
+        @keyframes starPulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+        
+        .star-1 { top: 10%; left: 5%; animation-delay: 0s; }
+        .star-2 { top: 20%; right: 10%; animation-delay: 1s; }
+        .star-3 { bottom: 15%; left: 8%; animation-delay: 2s; }
+        .star-4 { bottom: 25%; right: 5%; animation-delay: 1.5s; }
+        
+        @media (max-width: 768px) {
+            .snowman-decoration,
+            .reindeer-decoration,
+            .pine-tree,
+            .sleigh-decoration {
+                display: none;
+            }
+        }
+        
+        .link-preview a {
+            color: #c41e3a;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .link-preview a:hover {
+            text-decoration: underline;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            flex: 1;
+            min-width: 180px;
+            padding: 15px;
+            border-radius: 30px;
+            border: none;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        .whatsapp-btn {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+        }
+        
+        .facebook-btn {
+            background: linear-gradient(135deg, #1877F2 0%, #0d47a1 100%);
+        }
+        
+        .link-display {
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe6e6 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            word-break: break-all;
+            border: 3px dashed #c41e3a;
+        }
+        
+        .badge-custom {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 3px 10px rgba(196, 30, 58, 0.3);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+            color: #c41e3a;
+        }
+        
+        .carta-preview {
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe6e6 100%);
+            padding: 40px;
+            border-radius: 25px;
+            margin: 20px 0;
+            border: 4px solid #ffd700;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25), inset 0 0 30px rgba(255, 215, 0, 0.1);
+            position: relative;
+            overflow: visible;
+            min-height: 400px;
+        }
+        
+        .carta-preview::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #ffd700, #c41e3a, #228B22, #ffd700);
+            border-radius: 25px;
+            z-index: 0;
+            opacity: 0.3;
+        }
+        
+        .carta-preview::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(196, 30, 58, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+            border-radius: 21px;
+        }
+        
+        .carta-preview-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .carta-header {
+            text-align: center;
+            font-family: 'Mountains of Christmas', cursive;
+            color: #c41e3a;
+            font-size: 2.8rem;
+            margin-bottom: 35px;
+            position: relative;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.15), 0 0 10px rgba(255, 215, 0, 0.3);
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(255, 250, 240, 0.8) 0%, rgba(255, 240, 240, 0.8) 100%);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .carta-header::before,
+        .carta-header::after {
+            content: '🎄';
+            font-size: 1.5rem;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .carta-header::before {
+            left: 20px;
+        }
+        
+        .carta-header::after {
+            right: 20px;
+        }
+        
+        /* Decoraciones dentro de la carta para PDF */
+        .carta-decoration {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.3;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .carta-snowflake {
+            color: #87CEEB;
+            font-size: 1.5rem;
+        }
+        
+        .carta-star {
+            color: #FFD700;
+            font-size: 1.8rem;
+        }
+        
+        .carta-pine {
+            font-size: 2.5rem;
+        }
+        
+        .carta-reindeer {
+            font-size: 2rem;
+        }
+        
+        .carta-sleigh {
+            font-size: 3rem;
+            opacity: 0.4;
+        }
+        
+        .carta-snowflake-1 { top: 3%; left: 5%; }
+        .carta-snowflake-2 { top: 8%; right: 8%; }
+        .carta-snowflake-3 { top: 55%; left: 3%; }
+        .carta-snowflake-4 { bottom: 12%; right: 5%; }
+        .carta-snowflake-5 { top: 35%; left: 50%; }
+        .carta-snowflake-6 { top: 70%; left: 8%; }
+        .carta-snowflake-7 { bottom: 25%; right: 12%; }
+        
+        .carta-star-1 { top: 6%; left: 15%; }
+        .carta-star-2 { top: 22%; right: 12%; }
+        .carta-star-3 { bottom: 18%; left: 10%; }
+        .carta-star-4 { bottom: 8%; right: 15%; }
+        .carta-star-5 { top: 45%; left: 8%; }
+        .carta-star-6 { top: 50%; right: 8%; }
+        
+        .carta-pine-1 { bottom: 3%; left: 1%; }
+        .carta-pine-2 { bottom: 3%; right: 1%; }
+        .carta-pine-3 { top: 40%; left: 0%; }
+        .carta-pine-4 { top: 60%; right: 0%; }
+        
+        .carta-reindeer-1 { top: 12%; left: 1%; }
+        .carta-reindeer-2 { top: 18%; right: 1%; }
+        .carta-reindeer-3 { bottom: 30%; left: 0%; }
+        .carta-reindeer-4 { bottom: 35%; right: 0%; }
+        
+        .carta-sleigh-top { top: 1%; left: 35%; }
+        
+        .carta-snowman { font-size: 2.2rem; }
+        .carta-snowman-1 { bottom: 5%; left: 5%; }
+        .carta-snowman-2 { bottom: 5%; right: 5%; }
+        
+        .label-custom {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .star-decoration {
+            color: #ffd700;
+            font-size: 1.5rem;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Copos de nieve -->
+    <div id="snowflakes"></div>
+    <div id="star-snowflakes"></div>
+    
+    <!-- Decoraciones navideñas -->
+    <div class="snowman-decoration snowman-left">⛄</div>
+    <div class="snowman-decoration snowman-right">⛄</div>
+    <div class="reindeer-decoration reindeer-left">🦌</div>
+    <div class="reindeer-decoration reindeer-right">🦌</div>
+    <div class="snowman-decoration" style="left: 10%; top: 200px; animation-delay: 2.5s;">☃️</div>
+    <div class="reindeer-decoration" style="right: 10%; top: 250px; animation-delay: 1s;">🦌</div>
+    
+    <!-- Pinos decorativos -->
+    <div class="pine-tree pine-tree-left"></div>
+    <div class="pine-tree pine-tree-right"></div>
+    <div class="pine-tree" style="left: 5%; top: 300px; animation-delay: 1s;"></div>
+    <div class="pine-tree" style="right: 5%; top: 400px; animation-delay: 3s;"></div>
+    
+    <!-- Trineo decorativo -->
+    <div class="sleigh-decoration sleigh-top"></div>
+    
+    <div ng-controller="MainController as ctrl" class="container-custom">
+        <!-- Vista: Ingresar Teléfono -->
+        <div ng-if="ctrl.view === 'login'">
+            <div class="card-custom">
+                <div class="star-decoration star-1">⭐</div>
+                <div class="star-decoration star-2">⭐</div>
+                <div class="star-decoration star-3">⭐</div>
+                <div class="star-decoration star-4">⭐</div>
+                <div class="card-content">
+                    <h1 class="header-title">
+                        <span class="star-decoration">⭐</span>
+                        Carta a Santa
+                        <span class="star-decoration">⭐</span>
+                    </h1>
+                    <div class="santa-icon">
+                        🎅
+                    </div>
+                    <p class="welcome-message">
+                        ¡Hola! Ingresa tu número de teléfono y contraseña para ver tus solicitudes o crear una nueva.
+                    </p>
+                    
+                    <form ng-submit="ctrl.login()">
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-phone"></i> Tu número de teléfono (WhatsApp)
+                            </label>
+                            <input type="tel" class="form-control form-control-custom" 
+                                   ng-model="ctrl.phoneNumber" 
+                                   placeholder="Ej: +521234567890" 
+                                   required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-lock"></i> Contraseña
+                            </label>
+                            <input type="password" class="form-control form-control-custom" 
+                                   ng-model="ctrl.password" 
+                                   placeholder="Ingresa tu contraseña" 
+                                   required>
+                        </div>
+                        
+                        <div class="mb-3 text-end">
+                            <a href="#" ng-click="ctrl.showForgotPassword()" class="text-decoration-none" style="color: #c41e3a; font-size: 0.9rem;">
+                                <i class="fas fa-key"></i> ¿Olvidaste tu contraseña?
+                            </a>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary-custom w-100 mb-4">
+                            <i class="fas fa-sign-in-alt"></i> Ingresar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista: Olvidé mi contraseña -->
+        <div ng-if="ctrl.view === 'forgotPassword'">
+            <div class="card-custom">
+                <div class="star-decoration star-1">⭐</div>
+                <div class="star-decoration star-2">⭐</div>
+                <div class="star-decoration star-3">⭐</div>
+                <div class="star-decoration star-4">⭐</div>
+                <div class="card-content">
+                    <h1 class="header-title">
+                        <span class="star-decoration">🔑</span>
+                        Recuperar Contraseña
+                        <span class="star-decoration">🔑</span>
+                    </h1>
+                    <p class="welcome-message">
+                        Ingresa tu número de teléfono y te enviaremos un link de recuperación por WhatsApp.
+                    </p>
+                    
+                    <form ng-submit="ctrl.requestPasswordReset()">
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-phone"></i> Tu número de teléfono (WhatsApp)
+                            </label>
+                            <input type="tel" class="form-control form-control-custom" 
+                                   ng-model="ctrl.resetPhoneNumber" 
+                                   placeholder="Ej: +521234567890" 
+                                   required>
+                        </div>
+                        
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-secondary w-50" ng-click="ctrl.view = 'login'">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </button>
+                            <button type="submit" class="btn btn-primary-custom w-50">
+                                <i class="fas fa-paper-plane"></i> Enviar Link
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista: Restablecer contraseña -->
+        <div ng-if="ctrl.view === 'resetPassword'">
+            <div class="card-custom">
+                <div class="star-decoration star-1">⭐</div>
+                <div class="star-decoration star-2">⭐</div>
+                <div class="star-decoration star-3">⭐</div>
+                <div class="star-decoration star-4">⭐</div>
+                <div class="card-content">
+                    <h1 class="header-title">
+                        <span class="star-decoration">🔐</span>
+                        Nueva Contraseña
+                        <span class="star-decoration">🔐</span>
+                    </h1>
+                    <p class="welcome-message">
+                        Ingresa tu nueva contraseña. Asegúrate de que sea segura y fácil de recordar.
+                    </p>
+                    
+                    <form ng-submit="ctrl.resetPassword()">
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-lock"></i> Nueva Contraseña
+                            </label>
+                            <input type="password" class="form-control form-control-custom" 
+                                   ng-model="ctrl.newPassword" 
+                                   placeholder="Ingresa tu nueva contraseña" 
+                                   required
+                                   minlength="6">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-lock"></i> Confirmar Contraseña
+                            </label>
+                            <input type="password" class="form-control form-control-custom" 
+                                   ng-model="ctrl.confirmPassword" 
+                                   placeholder="Confirma tu nueva contraseña" 
+                                   required
+                                   minlength="6">
+                        </div>
+                        
+                        <div class="alert alert-danger" ng-if="ctrl.passwordError" ng-show="ctrl.passwordError">
+                            {{ctrl.passwordError}}
+                        </div>
+                        
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-secondary w-50" ng-click="ctrl.view = 'login'">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary-custom w-50">
+                                <i class="fas fa-check"></i> Restablecer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista: Lista de Solicitudes -->
+        <div ng-if="ctrl.view === 'requestsList'">
+            <div class="card-custom">
+                <div class="star-decoration star-1">⭐</div>
+                <div class="star-decoration star-2">⭐</div>
+                <div class="star-decoration star-3">⭐</div>
+                <div class="star-decoration star-4">⭐</div>
+                <div class="card-content">
+                    <h1 class="header-title">
+                        <span class="star-decoration">⭐</span>
+                        Mis Solicitudes
+                        <span class="star-decoration">⭐</span>
+                    </h1>
+                    
+                    <div class="mb-4">
+                        <button class="btn btn-primary-custom mb-3" ng-click="ctrl.createNewRequest()">
+                            <i class="fas fa-plus"></i> Crear Nueva Solicitud
+                        </button>
+                        <button class="btn btn-success-custom mb-3 ms-2" ng-click="ctrl.logout()">
+                            <i class="fas fa-sign-out-alt"></i> Cambiar Número
+                        </button>
+                    </div>
+                    
+                    <div ng-if="ctrl.requestsList.length === 0" class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p style="font-size: 1.2rem;">No tienes solicitudes aún. ¡Crea tu primera solicitud!</p>
+                    </div>
+                    
+                    <div ng-if="ctrl.requestsList.length > 0">
+                        <div ng-repeat="request in ctrl.requestsList" class="item-card mb-3" style="cursor: pointer;" ng-click="ctrl.viewRequestDetails(request.id)">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div style="flex: 1;">
+                                    <h5 style="color: #c41e3a; margin-bottom: 10px;">
+                                        <i class="fas fa-user"></i> {{request.partnerName}}
+                                    </h5>
+                                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">
+                                        <i class="fas fa-phone"></i> {{request.partnerPhone}}
+                                    </p>
+                                    <p style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">
+                                        {{request.message.substring(0, 100)}}...
+                                    </p>
+                                    <div>
+                                        <span class="badge" 
+                                              ng-class="{'badge-custom': request.status === 'completed', 'bg-warning': request.status === 'pending', 'bg-secondary': request.status === 'sent'}">
+                                            <span ng-if="request.status === 'completed'">✅ Completada</span>
+                                            <span ng-if="request.status === 'pending'">⏳ Pendiente</span>
+                                            <span ng-if="request.status === 'sent'">📤 Enviada</span>
+                                        </span>
+                                        <span class="ms-2" style="font-size: 0.8rem; color: #999;">
+                                            {{request.date | date:'dd/MM/yyyy'}}
+                                        </span>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: #c41e3a; font-size: 1.5rem; margin-left: 15px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista: Crear Solicitud (Hombre) -->
+        <div ng-if="ctrl.view === 'create'">
+            <div class="card-custom">
+                <div class="star-decoration star-1">⭐</div>
+                <div class="star-decoration star-2">⭐</div>
+                <div class="star-decoration star-3">⭐</div>
+                <div class="star-decoration star-4">⭐</div>
+                <div class="card-content">
+                    <h1 class="header-title">
+                        <span class="star-decoration">⭐</span>
+                        Nueva Solicitud
+                        <span class="star-decoration">⭐</span>
+                    </h1>
+                    <div class="santa-icon">
+                        🎅
+                    </div>
+                    <p class="welcome-message">
+                        Crea una nueva solicitud para que alguien llene su carta a Santa.
+                    </p>
+                    
+                    <div class="mb-3">
+                        <button class="btn btn-primary-custom" ng-click="ctrl.backToRequestsList()">
+                            <i class="fas fa-arrow-left"></i> Volver a Mis Solicitudes
+                        </button>
+                    </div>
+                    
+                    <form ng-submit="ctrl.createRequest()">
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-user"></i> Nombre de la persona
+                            </label>
+                            <input type="text" class="form-control form-control-custom" 
+                                   ng-model="ctrl.partnerName" 
+                                   placeholder="Ej: María, Ana, Juan, etc." 
+                                   required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-phone"></i> Número de teléfono (WhatsApp)
+                            </label>
+                            <input type="tel" class="form-control form-control-custom" 
+                                   ng-model="ctrl.partnerPhone" 
+                                   placeholder="Ej: +521234567890" 
+                                   required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="label-custom">
+                                <i class="fas fa-envelope"></i> Mensaje para tu pareja
+                            </label>
+                            <textarea class="form-control form-control-custom" 
+                                      ng-model="ctrl.requestMessage" 
+                                      rows="5" 
+                                      placeholder="Ej: ¡Hola mi amor! Por favor, llena tu carta a Santa con todos los regalos que te gustaría recibir. Te amo mucho ❤️"
+                                      required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary-custom w-100 mb-4">
+                            <i class="fas fa-magic"></i> Crear Solicitud
+                        </button>
+                    </form>
+                    
+                    <!-- Link para compartir -->
+                    <div ng-if="ctrl.shareLink" class="link-display">
+                        <strong><i class="fas fa-link"></i> Comparte este link con tu pareja:</strong>
+                        <div class="mt-3">
+                            <input type="text" class="form-control form-control-custom" 
+                                   ng-value="ctrl.shareLink" 
+                                   readonly 
+                                   id="shareLinkInput">
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-success-custom me-2" 
+                                    ng-click="ctrl.copyLink()">
+                                <i class="fas fa-copy"></i> Copiar Link
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div ng-if="ctrl.shareLink" class="share-buttons">
+                        <button class="btn share-btn whatsapp-btn w-100 mb-3" 
+                                ng-click="ctrl.sendRequestToPartner()">
+                            <i class="fab fa-whatsapp"></i> Enviar Solicitud a {{ctrl.partnerName}} por WhatsApp
+                        </button>
+                        <button class="btn share-btn whatsapp-btn" 
+                                ng-click="ctrl.shareWhatsApp()">
+                            <i class="fab fa-whatsapp"></i> Compartir por WhatsApp
+                        </button>
+                        <button class="btn share-btn facebook-btn" 
+                                ng-click="ctrl.shareFacebook()">
+                            <i class="fab fa-facebook"></i> Compartir por Facebook
+                        </button>
+                    </div>
+                    
+                    <div ng-if="ctrl.shareLink" class="mt-4">
+                        <button class="btn btn-primary-custom w-100" 
+                                ng-click="ctrl.backToRequestsList()">
+                            <i class="fas fa-list"></i> Ver Mis Solicitudes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista: Llenar Carta (Pareja) -->
+        <div ng-if="ctrl.view === 'fill'">
+            <div class="card-custom">
+                <div class="star-decoration star-1">⭐</div>
+                <div class="star-decoration star-2">⭐</div>
+                <div class="star-decoration star-3">⭐</div>
+                <div class="star-decoration star-4">⭐</div>
+                <div class="card-content">
+                    <h1 class="header-title">
+                        <span class="star-decoration">⭐</span>
+                        Mi Carta a Santa
+                        <span class="star-decoration">⭐</span>
+                    </h1>
+                    <div class="santa-icon">
+                        🎄
+                    </div>
+                    
+                    <div ng-if="ctrl.requestMessage" class="welcome-message">
+                        <i class="fas fa-heart" style="color: #c41e3a;"></i>
+                        {{ctrl.requestMessage}}
+                    </div>
+                    
+                    <form ng-submit="ctrl.addItem()" class="mb-4">
+                        <h4 class="mb-3" style="color: #c41e3a;">
+                            <i class="fas fa-plus-circle"></i> Agregar Regalo a mi Lista
+                        </h4>
+                        
+                        <div class="mb-3">
+                            <label class="label-custom">Imagen del regalo (URL)</label>
+                            <input type="url" class="form-control form-control-custom" 
+                                   ng-model="ctrl.newItem.image" 
+                                   placeholder="https://ejemplo.com/imagen.jpg">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="label-custom">Link de la tienda (Amazon, Mercado Libre, etc.)</label>
+                            <input type="url" class="form-control form-control-custom" 
+                                   ng-model="ctrl.newItem.link" 
+                                   placeholder="https://amazon.com.mx/producto o https://mercadolibre.com.mx/producto">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <textarea class="form-control form-control-custom" 
+                                      ng-model="ctrl.newItem.description" 
+                                      rows="3" 
+                                      placeholder="Escribe el regalo que te gustaría recibir..."
+                                      required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary-custom w-100">
+                            <i class="fas fa-plus"></i> Agregar a mi Lista
+                        </button>
+                    </form>
+                    
+                    <!-- Lista de Regalos -->
+                    <div ng-if="ctrl.items.length > 0">
+                        <h4 class="mb-3" style="color: #c41e3a;">
+                            <i class="fas fa-list"></i> Mi Lista de Deseos ({{ctrl.items.length}})
+                        </h4>
+                        
+                        <ol class="list-group list-group-numbered">
+                            <li ng-repeat="item in ctrl.items" class="item-card list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto" style="flex: 1;">
+                                    <div ng-if="item.image" class="mb-2">
+                                        <img ng-src="{{item.image}}" alt="Imagen del regalo" class="item-image" 
+                                             onerror="this.style.display='none'">
+                                    </div>
+                                    
+                                    <div class="mb-2" style="font-size: 0.9rem; line-height: 1.5;">
+                                        {{item.description}}
+                                    </div>
+                                    
+                                    <div ng-if="item.link" class="mt-2">
+                                        <a ng-href="{{item.link}}" target="_blank" 
+                                           class="btn btn-sm" 
+                                           style="background: #c41e3a; color: white; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem;">
+                                            <i class="fas fa-shopping-cart"></i> Ver Producto
+                                        </a>
+                                    </div>
+                                </div>
+                                <button class="btn btn-danger-custom btn-sm" 
+                                        ng-click="ctrl.removeItem($index)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </li>
+                        </ol>
+                        
+                        <div class="mt-4">
+                            <button class="btn btn-success-custom w-100 mb-3" 
+                                    ng-click="ctrl.finalizeCarta()">
+                                <i class="fas fa-check-circle"></i> Finalizar mi Carta
+                            </button>
+                            
+                            <div class="share-buttons">
+                                <button class="btn share-btn whatsapp-btn" 
+                                        ng-click="ctrl.shareCartaWhatsApp()">
+                                    <i class="fab fa-whatsapp"></i> Compartir por WhatsApp
+                                </button>
+                                <button class="btn share-btn facebook-btn" 
+                                        ng-click="ctrl.shareCartaFacebook()">
+                                    <i class="fab fa-facebook"></i> Compartir por Facebook
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div ng-if="ctrl.items.length === 0" class="empty-state">
+                        <i class="fas fa-gift"></i>
+                        <p style="font-size: 1.2rem;">Tu lista está vacía. ¡Agrega tus primeros regalos!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista: Ver Carta Recibida (Hombre) -->
+        <div ng-if="ctrl.view === 'received'">
+            <div class="card-custom">
+                <div class="star-decoration star-1">⭐</div>
+                <div class="star-decoration star-2">⭐</div>
+                <div class="star-decoration star-3">⭐</div>
+                <div class="star-decoration star-4">⭐</div>
+                <div class="card-content">
+                    <h1 class="header-title">
+                        <span class="star-decoration">⭐</span>
+                        Carta Recibida
+                        <span class="star-decoration">⭐</span>
+                    </h1>
+                    
+                    <button class="btn btn-primary-custom mb-4" ng-click="ctrl.backToRequestsList()">
+                        <i class="fas fa-arrow-left"></i> Volver a Mis Solicitudes
+                    </button>
+                    
+                    <div ng-if="!ctrl.receivedCarta" class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p style="font-size: 1.2rem;">Aún no has recibido ninguna carta. Comparte el link con tu pareja.</p>
+                    </div>
+                    
+                    <div ng-if="ctrl.receivedCarta" id="cartaContent" class="carta-preview">
+                        <!-- Decoraciones navideñas para PDF -->
+                        <div class="carta-decoration carta-snowflake carta-snowflake-1">❄</div>
+                        <div class="carta-decoration carta-snowflake carta-snowflake-2">❄</div>
+                        <div class="carta-decoration carta-snowflake carta-snowflake-3">❄</div>
+                        <div class="carta-decoration carta-snowflake carta-snowflake-4">❄</div>
+                        <div class="carta-decoration carta-snowflake carta-snowflake-5">❄</div>
+                        <div class="carta-decoration carta-snowflake carta-snowflake-6">❄</div>
+                        <div class="carta-decoration carta-snowflake carta-snowflake-7">❄</div>
+                        
+                        <div class="carta-decoration carta-star carta-star-1">⭐</div>
+                        <div class="carta-decoration carta-star carta-star-2">⭐</div>
+                        <div class="carta-decoration carta-star carta-star-3">⭐</div>
+                        <div class="carta-decoration carta-star carta-star-4">⭐</div>
+                        <div class="carta-decoration carta-star carta-star-5">⭐</div>
+                        <div class="carta-decoration carta-star carta-star-6">⭐</div>
+                        
+                        <div class="carta-decoration carta-pine carta-pine-1">🌲</div>
+                        <div class="carta-decoration carta-pine carta-pine-2">🌲</div>
+                        <div class="carta-decoration carta-pine carta-pine-3">🌲</div>
+                        <div class="carta-decoration carta-pine carta-pine-4">🌲</div>
+                        
+                        <div class="carta-decoration carta-reindeer carta-reindeer-1">🦌</div>
+                        <div class="carta-decoration carta-reindeer carta-reindeer-2">🦌</div>
+                        <div class="carta-decoration carta-reindeer carta-reindeer-3">🦌</div>
+                        <div class="carta-decoration carta-reindeer carta-reindeer-4">🦌</div>
+                        
+                        <div class="carta-decoration carta-sleigh carta-sleigh-top">🛷</div>
+                        
+                        <div class="carta-decoration carta-snowman carta-snowman-1">⛄</div>
+                        <div class="carta-decoration carta-snowman carta-snowman-2">⛄</div>
+                        
+                        <div class="carta-preview-content">
+                            <div class="carta-header">
+                                🎅 Mi Carta a Santa 🎄
+                            </div>
+                            <ol class="list-group list-group-numbered">
+                            <li ng-repeat="item in ctrl.receivedCarta.items" class="item-card list-group-item">
+                                <div class="ms-2 me-auto">
+                                    <div ng-if="item.image" class="mb-2">
+                                        <img ng-src="{{item.image}}" alt="Imagen" class="item-image" 
+                                             onerror="this.style.display='none'">
+                                    </div>
+                                    <div class="mb-2" style="font-size: 0.9rem; line-height: 1.5;">
+                                        {{item.description}}
+                                    </div>
+                                    <div ng-if="item.link" class="mt-2">
+                                        <a ng-href="{{item.link}}" target="_blank" 
+                                           class="btn btn-sm" 
+                                           style="background: #c41e3a; color: white; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem;">
+                                            <i class="fas fa-shopping-cart"></i> Ver Producto
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                        </ol>
+                        </div>
+                    </div>
+                    
+                    <div ng-if="ctrl.receivedCarta" class="mt-4">
+                        <div class="share-buttons">
+                            <button class="btn share-btn" 
+                                    style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);"
+                                    ng-click="ctrl.downloadPDF()">
+                                <i class="fas fa-file-pdf"></i> Descargar PDF
+                            </button>
+                            <button class="btn share-btn whatsapp-btn" 
+                                    ng-click="ctrl.sendPDFWhatsApp()">
+                                <i class="fab fa-whatsapp"></i> Enviar PDF por WhatsApp
+                            </button>
+                            <button class="btn share-btn whatsapp-btn" 
+                                    ng-click="ctrl.sendHTMLWhatsApp()">
+                                <i class="fab fa-whatsapp"></i> Enviar HTML por WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Crear copos de nieve
+        function createSnowflakes() {
+            const snowContainer = document.getElementById('snowflakes');
+            const snowflakeCount = 50;
+            
+            for (let i = 0; i < snowflakeCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.innerHTML = '❄';
+                snowflake.style.left = Math.random() * 100 + '%';
+                snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                snowflake.style.opacity = Math.random();
+                snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                snowContainer.appendChild(snowflake);
+            }
+        }
+        
+        function createStarSnowflakes() {
+            const starContainer = document.getElementById('star-snowflakes');
+            const starCount = 30;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star-snowflake';
+                star.innerHTML = '⭐';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.animationDuration = (Math.random() * 4 + 3) + 's';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                star.style.opacity = Math.random() * 0.5 + 0.5;
+                star.style.fontSize = (Math.random() * 8 + 12) + 'px';
+                starContainer.appendChild(star);
+            }
+        }
+        
+        createSnowflakes();
+        createStarSnowflakes();
+        
+        angular.module('cartaSantaApp', [])
+        .controller('MainController', function($scope) {
+            var ctrl = this;
+            
+            // Inicialización
+            ctrl.view = 'login';
+            ctrl.phoneNumber = '';
+            ctrl.password = '';
+            ctrl.resetPhoneNumber = '';
+            ctrl.newPassword = '';
+            ctrl.confirmPassword = '';
+            ctrl.passwordError = '';
+            ctrl.partnerName = '';
+            ctrl.partnerPhone = '';
+            ctrl.requestMessage = '';
+            ctrl.shareLink = '';
+            ctrl.items = [];
+            ctrl.receivedCarta = null;
+            ctrl.requestsList = [];
+            ctrl.currentRequestId = null;
+            ctrl.newItem = {
+                image: '',
+                link: '',
+                description: ''
+            };
+            
+            // Función simple para hash de contraseña (no usar en producción real)
+            function hashPassword(password) {
+                var hash = 0;
+                if (password.length === 0) return hash.toString();
+                for (var i = 0; i < password.length; i++) {
+                    var char = password.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return Math.abs(hash).toString(36);
+            }
+            
+            // Generar token único para recuperación
+            function generateToken() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+            }
+            
+            // Generar ID único
+            function generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            }
+            
+            // IndexedDB
+            var db = null;
+            var dbName = 'CartaSantaDB';
+            var dbVersion = 4; // Incrementado para agregar stores de usuarios y tokens
+            
+            // Inicializar IndexedDB
+            function initDB() {
+                return new Promise(function(resolve, reject) {
+                    var request = indexedDB.open(dbName, dbVersion);
+                    
+                    request.onerror = function() {
+                        reject(request.error);
+                    };
+                    
+                    request.onsuccess = function() {
+                        db = request.result;
+                        resolve(db);
+                    };
+                    
+                    request.onupgradeneeded = function(event) {
+                        db = event.target.result;
+                        var transaction = event.target.transaction;
+                        
+                        // Crear object stores si no existen
+                        if (!db.objectStoreNames.contains('requests')) {
+                            var requestStore = db.createObjectStore('requests', { keyPath: 'id' });
+                            requestStore.createIndex('phone', 'phone', { unique: false });
+                        } else {
+                            // Si el store ya existe, intentar agregar el índice si no existe
+                            try {
+                                var oldStore = transaction.objectStore('requests');
+                                if (!oldStore.indexNames.contains('phone')) {
+                                    oldStore.createIndex('phone', 'phone', { unique: false });
+                                }
+                            } catch (e) {
+                                console.log('No se pudo crear índice phone, se usará filtrado manual');
+                            }
+                        }
+                        
+                        if (!db.objectStoreNames.contains('cartas')) {
+                            db.createObjectStore('cartas', { keyPath: 'requestId' });
+                        }
+                        if (!db.objectStoreNames.contains('finalizedCartas')) {
+                            db.createObjectStore('finalizedCartas', { keyPath: 'requestId' });
+                        }
+                        if (!db.objectStoreNames.contains('jsonFiles')) {
+                            var jsonStore = db.createObjectStore('jsonFiles', { keyPath: 'filename' });
+                            jsonStore.createIndex('filename', 'filename', { unique: true });
+                        }
+                        
+                        // Store para usuarios con contraseñas
+                        if (!db.objectStoreNames.contains('users')) {
+                            var userStore = db.createObjectStore('users', { keyPath: 'phone' });
+                            userStore.createIndex('phone', 'phone', { unique: true });
+                        }
+                        
+                        // Store para tokens de recuperación de contraseña
+                        if (!db.objectStoreNames.contains('passwordTokens')) {
+                            var tokenStore = db.createObjectStore('passwordTokens', { keyPath: 'token' });
+                            tokenStore.createIndex('phone', 'phone', { unique: false });
+                            tokenStore.createIndex('expires', 'expires', { unique: false });
+                        }
+                    };
+                });
+            }
+            
+            // Guardar en IndexedDB
+            function saveToDB(storeName, data) {
+                return new Promise(function(resolve, reject) {
+                    if (!db) {
+                        initDB().then(function() {
+                            saveToDB(storeName, data).then(resolve).catch(reject);
+                        }).catch(reject);
+                        return;
+                    }
+                    
+                    // Validar que el objeto tenga la propiedad requerida según el store
+                    if (storeName === 'cartas') {
+                        if (!data.requestId || data.requestId === null || data.requestId === undefined || data.requestId === '') {
+                            reject(new Error('El objeto debe tener un requestId válido para guardar en cartas. requestId recibido: ' + data.requestId));
+                            return;
+                        }
+                    }
+                    if (storeName === 'finalizedCartas') {
+                        if (!data.requestId || data.requestId === null || data.requestId === undefined || data.requestId === '') {
+                            reject(new Error('El objeto debe tener un requestId válido para guardar en finalizedCartas. requestId recibido: ' + data.requestId));
+                            return;
+                        }
+                    }
+                    if (storeName === 'requests') {
+                        if (!data.id || data.id === null || data.id === undefined || data.id === '') {
+                            reject(new Error('El objeto debe tener un id válido para guardar en requests. id recibido: ' + data.id));
+                            return;
+                        }
+                    }
+                    
+                    var transaction = db.transaction([storeName], 'readwrite');
+                    var store = transaction.objectStore(storeName);
+                    
+                    // Verificar que el keyPath del store coincida con los datos
+                    var expectedKeyPath = store.keyPath;
+                    if (expectedKeyPath) {
+                        var keyValue = data[expectedKeyPath];
+                        if (!keyValue || keyValue === null || keyValue === undefined || keyValue === '') {
+                            reject(new Error('El objeto debe tener un valor válido para "' + expectedKeyPath + '" pero recibió: ' + keyValue));
+                            return;
+                        }
+                    }
+                    
+                    var request = store.put(data);
+                    
+                    request.onsuccess = function() {
+                        resolve(request.result);
+                    };
+                    
+                    request.onerror = function() {
+                        var error = request.error;
+                        console.error('Error en IndexedDB:', error);
+                        console.error('Store:', storeName);
+                        console.error('Data:', data);
+                        console.error('KeyPath esperado:', store.keyPath);
+                        console.error('Valor del keyPath en datos:', data[store.keyPath]);
+                        
+                        // Si el error es sobre keyPath, dar un mensaje más claro
+                        if (error && error.name === 'DataError' && (error.message.includes('key path') || error.message.includes('keyPath'))) {
+                            var keyPathName = store.keyPath;
+                            var actualValue = data[keyPathName];
+                            var errorMsg = 'Error de configuración de base de datos.\n\n';
+                            errorMsg += 'El store "' + storeName + '" espera un keyPath "' + keyPathName + '" pero el objeto tiene: ' + actualValue + '\n\n';
+                            errorMsg += 'SOLUCIÓN:\n';
+                            errorMsg += '1. Abre las herramientas de desarrollador (F12)\n';
+                            errorMsg += '2. Ve a "Application" > "Storage" > "IndexedDB"\n';
+                            errorMsg += '3. Elimina "CartaSantaDB"\n';
+                            errorMsg += '4. Recarga la página';
+                            reject(new Error(errorMsg));
+                        } else {
+                            reject(error);
+                        }
+                    };
+                });
+            }
+            
+            // Leer de IndexedDB
+            function readFromDB(storeName, key) {
+                return new Promise(function(resolve, reject) {
+                    if (!db) {
+                        initDB().then(function() {
+                            readFromDB(storeName, key).then(resolve).catch(reject);
+                        }).catch(reject);
+                        return;
+                    }
+                    
+                    var transaction = db.transaction([storeName], 'readonly');
+                    var store = transaction.objectStore(storeName);
+                    var request = store.get(key);
+                    
+                    request.onsuccess = function() {
+                        resolve(request.result);
+                    };
+                    
+                    request.onerror = function() {
+                        reject(request.error);
+                    };
+                });
+            }
+            
+            // Leer JSON del proyecto desde jsondata (solo lectura, no escritura)
+            async function readJSONFromProject(phoneNumber) {
+                try {
+                    var cleanPhone = phoneNumber.replace(/\D/g, '');
+                    var filePath = 'jsondata/' + cleanPhone + '.json';
+                    
+                    // Intentar leer desde el servidor/proyecto
+                    try {
+                        var response = await fetch(filePath);
+                        if (response.ok) {
+                            var data = await response.json();
+                            return data;
+                        }
+                    } catch (fetchError) {
+                        // Si no se encuentra, retornar null (se usará IndexedDB)
+                        return null;
+                    }
+                    
+                    return null;
+                } catch (error) {
+                    console.error('Error leyendo archivo JSON:', error);
+                    return null;
+                }
+            }
+            
+            // Obtener todas las solicitudes por número de teléfono
+            function getAllRequestsByPhone(phoneNumber) {
+                return new Promise(function(resolve, reject) {
+                    // Asegurar que la DB esté inicializada
+                    if (!db) {
+                        initDB().then(function() {
+                            getAllRequestsByPhone(phoneNumber).then(resolve).catch(reject);
+                        }).catch(function(error) {
+                            console.error('Error inicializando DB:', error);
+                            // Si hay error, retornar lista vacía en lugar de rechazar
+                            resolve([]);
+                        });
+                        return;
+                    }
+                    
+                    try {
+                        var transaction = db.transaction(['requests'], 'readonly');
+                        var store = transaction.objectStore('requests');
+                        
+                        // Verificar si el índice existe
+                        if (!store.indexNames.contains('phone')) {
+                            // Si no existe el índice, obtener todas y filtrar
+                            var getAllRequest = store.getAll();
+                            getAllRequest.onsuccess = function() {
+                                var allRequests = getAllRequest.result || [];
+                                var filtered = allRequests.filter(function(req) {
+                                    return req.phone === phoneNumber;
+                                });
+                                // Ordenar por fecha (más recientes primero)
+                                filtered.sort(function(a, b) {
+                                    return new Date(b.date) - new Date(a.date);
+                                });
+                                resolve(filtered);
+                            };
+                            getAllRequest.onerror = function() {
+                                resolve([]); // Retornar lista vacía en caso de error
+                            };
+                        } else {
+                            var index = store.index('phone');
+                            var request = index.getAll(phoneNumber);
+                            
+                            request.onsuccess = function() {
+                                var requests = request.result || [];
+                                // Ordenar por fecha (más recientes primero)
+                                requests.sort(function(a, b) {
+                                    return new Date(b.date) - new Date(a.date);
+                                });
+                                resolve(requests);
+                            };
+                            
+                            request.onerror = function() {
+                                resolve([]); // Retornar lista vacía en caso de error
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Error obteniendo solicitudes:', error);
+                        resolve([]); // Retornar lista vacía en caso de error
+                    }
+                });
+            }
+            
+            // Inicializar DB al cargar
+            initDB().catch(function(error) {
+                console.error('Error inicializando IndexedDB:', error);
+            });
+            
+            // Login - Cargar solicitudes del usuario
+            ctrl.login = async function() {
+                if (!ctrl.phoneNumber) {
+                    alert('Por favor, ingresa tu número de teléfono');
+                    return;
+                }
+                
+                if (!ctrl.password) {
+                    alert('Por favor, ingresa tu contraseña');
+                    return;
+                }
+                
+                try {
+                    // Asegurar que la DB esté inicializada
+                    if (!db) {
+                        await initDB();
+                    }
+                    
+                    // Verificar usuario y contraseña
+                    var user = await readFromDB('users', ctrl.phoneNumber);
+                    
+                    if (!user) {
+                        // Si no existe el usuario, crearlo con la contraseña proporcionada
+                        var hashedPassword = hashPassword(ctrl.password);
+                        var newUser = {
+                            phone: ctrl.phoneNumber,
+                            password: hashedPassword,
+                            createdAt: new Date().toISOString()
+                        };
+                        await saveToDB('users', newUser);
+                        console.log('Usuario creado exitosamente');
+                    } else {
+                        // Verificar contraseña
+                        var hashedPassword = hashPassword(ctrl.password);
+                        if (user.password !== hashedPassword) {
+                            alert('Contraseña incorrecta. Por favor, intenta de nuevo.');
+                            return;
+                        }
+                    }
+                    
+                    ctrl.requestsList = await getAllRequestsByPhone(ctrl.phoneNumber);
+                    ctrl.view = 'requestsList';
+                    $scope.$apply();
+                } catch (error) {
+                    console.error('Error en login:', error);
+                    alert('Error al iniciar sesión. Por favor, intenta de nuevo.');
+                }
+            };
+            
+            // Crear nueva solicitud
+            ctrl.createNewRequest = function() {
+                ctrl.partnerName = '';
+                ctrl.partnerPhone = '';
+                ctrl.requestMessage = '';
+                ctrl.shareLink = '';
+                ctrl.currentRequestId = null;
+                ctrl.view = 'create';
+            };
+            
+            // Volver a lista de solicitudes
+            ctrl.backToRequestsList = function() {
+                ctrl.login();
+            };
+            
+            // Cerrar sesión
+            ctrl.logout = function() {
+                ctrl.phoneNumber = '';
+                ctrl.password = '';
+                ctrl.requestsList = [];
+                ctrl.view = 'login';
+            };
+            
+            // Mostrar vista de olvidé mi contraseña
+            ctrl.showForgotPassword = function() {
+                ctrl.resetPhoneNumber = '';
+                ctrl.view = 'forgotPassword';
+            };
+            
+            // Solicitar recuperación de contraseña
+            ctrl.requestPasswordReset = async function() {
+                if (!ctrl.resetPhoneNumber) {
+                    alert('Por favor, ingresa tu número de teléfono');
+                    return;
+                }
+                
+                try {
+                    // Asegurar que la DB esté inicializada
+                    if (!db) {
+                        await initDB();
+                    }
+                    
+                    // Verificar que el usuario exista
+                    var user = await readFromDB('users', ctrl.resetPhoneNumber);
+                    if (!user) {
+                        alert('No se encontró una cuenta con ese número de teléfono.');
+                        return;
+                    }
+                    
+                    // Generar token de recuperación
+                    var token = generateToken();
+                    var expires = new Date();
+                    expires.setHours(expires.getHours() + 1); // Token válido por 1 hora
+                    
+                    var tokenData = {
+                        token: token,
+                        phone: ctrl.resetPhoneNumber,
+                        expires: expires.toISOString(),
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    await saveToDB('passwordTokens', tokenData);
+                    
+                    // Generar link de recuperación
+                    var resetLink = window.location.origin + window.location.pathname + '?token=' + encodeURIComponent(token) + '&view=resetPassword';
+                    
+                    // Enviar por WhatsApp
+                    var cleanPhone = ctrl.resetPhoneNumber.replace(/\D/g, '');
+                    var message = encodeURIComponent('🔐 Recuperación de Contraseña\n\nHaz clic en el siguiente link para restablecer tu contraseña:\n\n' + resetLink + '\n\nEste link expira en 1 hora.\n\nSi no solicitaste este cambio, ignora este mensaje.');
+                    window.open('https://wa.me/' + cleanPhone + '?text=' + message, '_blank');
+                    
+                    alert('¡Link de recuperación enviado! Revisa tu WhatsApp.');
+                    ctrl.view = 'login';
+                    $scope.$apply();
+                } catch (error) {
+                    console.error('Error solicitando recuperación:', error);
+                    alert('Error al enviar el link de recuperación. Por favor, intenta de nuevo.');
+                }
+            };
+            
+            // Restablecer contraseña
+            ctrl.resetPassword = async function() {
+                if (!ctrl.newPassword || !ctrl.confirmPassword) {
+                    ctrl.passwordError = 'Por favor, completa todos los campos';
+                    $scope.$apply();
+                    return;
+                }
+                
+                if (ctrl.newPassword.length < 6) {
+                    ctrl.passwordError = 'La contraseña debe tener al menos 6 caracteres';
+                    $scope.$apply();
+                    return;
+                }
+                
+                if (ctrl.newPassword !== ctrl.confirmPassword) {
+                    ctrl.passwordError = 'Las contraseñas no coinciden';
+                    $scope.$apply();
+                    return;
+                }
+                
+                try {
+                    // Obtener token de la URL
+                    var urlParams = new URLSearchParams(window.location.search);
+                    var token = urlParams.get('token');
+                    
+                    if (!token) {
+                        alert('Token de recuperación no válido. Por favor, solicita un nuevo link.');
+                        ctrl.view = 'login';
+                        $scope.$apply();
+                        return;
+                    }
+                    
+                    // Asegurar que la DB esté inicializada
+                    if (!db) {
+                        await initDB();
+                    }
+                    
+                    // Verificar token
+                    var tokenData = await readFromDB('passwordTokens', token);
+                    if (!tokenData) {
+                        alert('Token de recuperación no válido o expirado. Por favor, solicita un nuevo link.');
+                        ctrl.view = 'login';
+                        $scope.$apply();
+                        return;
+                    }
+                    
+                    // Verificar que no haya expirado
+                    var expires = new Date(tokenData.expires);
+                    if (new Date() > expires) {
+                        alert('El token de recuperación ha expirado. Por favor, solicita un nuevo link.');
+                        // Eliminar token expirado
+                        var transaction = db.transaction(['passwordTokens'], 'readwrite');
+                        var store = transaction.objectStore('passwordTokens');
+                        store.delete(token);
+                        ctrl.view = 'login';
+                        $scope.$apply();
+                        return;
+                    }
+                    
+                    // Actualizar contraseña del usuario
+                    var phone = tokenData.phone;
+                    var hashedPassword = hashPassword(ctrl.newPassword);
+                    var user = await readFromDB('users', phone);
+                    
+                    if (user) {
+                        user.password = hashedPassword;
+                        await saveToDB('users', user);
+                    } else {
+                        // Si el usuario no existe, crearlo
+                        var newUser = {
+                            phone: phone,
+                            password: hashedPassword,
+                            createdAt: new Date().toISOString()
+                        };
+                        await saveToDB('users', newUser);
+                    }
+                    
+                    // Eliminar token usado
+                    var transaction = db.transaction(['passwordTokens'], 'readwrite');
+                    var store = transaction.objectStore('passwordTokens');
+                    store.delete(token);
+                    
+                    alert('¡Contraseña restablecida exitosamente! Ahora puedes iniciar sesión.');
+                    ctrl.view = 'login';
+                    ctrl.newPassword = '';
+                    ctrl.confirmPassword = '';
+                    ctrl.passwordError = '';
+                    $scope.$apply();
+                } catch (error) {
+                    console.error('Error restableciendo contraseña:', error);
+                    alert('Error al restablecer la contraseña. Por favor, intenta de nuevo.');
+                }
+            };
+            
+            // Ver detalles de una solicitud
+            ctrl.viewRequestDetails = async function(requestId) {
+                ctrl.currentRequestId = requestId;
+                
+                // Cargar la solicitud
+                var request = await readFromDB('requests', requestId);
+                if (request) {
+                    // Cargar la carta si existe
+                    var carta = await readFromDB('finalizedCartas', requestId);
+                    if (carta) {
+                        ctrl.receivedCarta = carta;
+                        ctrl.view = 'received';
+                    } else {
+                        alert('Esta solicitud aún no ha sido completada');
+                    }
+                } else {
+                    alert('No se encontró la solicitud');
+                }
+                $scope.$apply();
+            };
+            
+            // Verificar parámetros de URL primero
+            var urlParams = new URLSearchParams(window.location.search);
+            var phone = urlParams.get('phone');
+            var requestId = urlParams.get('requestId');
+            var viewParam = urlParams.get('view');
+            var token = urlParams.get('token');
+            
+            // Si hay token en la URL, mostrar vista de restablecer contraseña
+            if (token && viewParam === 'resetPassword') {
+                ctrl.view = 'resetPassword';
+            }
+            
+            // Cargar carta recibida (definir antes de usarla)
+            ctrl.loadReceivedCarta = async function() {
+                var requestIdToUse = ctrl.currentRequestId;
+                if (!requestIdToUse) {
+                    var urlParams = new URLSearchParams(window.location.search);
+                    requestIdToUse = urlParams.get('requestId');
+                }
+                
+                if (requestIdToUse) {
+                    try {
+                        // Intentar cargar desde IndexedDB
+                        var carta = await readFromDB('finalizedCartas', requestIdToUse);
+                        if (carta) {
+                            ctrl.receivedCarta = carta;
+                            $scope.$apply();
+                        }
+                    } catch (error) {
+                        console.error('Error cargando carta:', error);
+                    }
+                }
+            };
+            
+            // Cargar datos iniciales desde URL
+            if (requestId && viewParam === 'fill') {
+                // Establecer currentRequestId primero
+                ctrl.currentRequestId = String(requestId).trim();
+                
+                // Asegurar que la DB esté inicializada
+                initDB().then(function() {
+                    readFromDB('requests', ctrl.currentRequestId).then(function(request) {
+                        if (request) {
+                            ctrl.requestMessage = request.message;
+                            $scope.$apply();
+                        } else {
+                            // No bloquear, solo mostrar mensaje informativo
+                            console.warn('Solicitud no encontrada con ID:', ctrl.currentRequestId);
+                            console.warn('Continuando sin mensaje de solicitud. El usuario puede agregar items.');
+                            // No mostrar alert bloqueante, permitir continuar
+                        }
+                    }).catch(function(error) {
+                        console.error('Error cargando solicitud:', error);
+                        // No bloquear, permitir continuar
+                    });
+                    
+                    readFromDB('cartas', ctrl.currentRequestId).then(function(carta) {
+                        if (carta && carta.items) {
+                            ctrl.items = carta.items;
+                            $scope.$apply();
+                        } else {
+                            // Intentar cargar desde localStorage como respaldo
+                            try {
+                                var backup = localStorage.getItem('carta_backup_' + ctrl.currentRequestId);
+                                if (backup) {
+                                    var cartaBackup = JSON.parse(backup);
+                                    if (cartaBackup && cartaBackup.items) {
+                                        ctrl.items = cartaBackup.items;
+                                        console.log('Cargado desde localStorage como respaldo');
+                                        $scope.$apply();
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('No se pudo cargar desde localStorage:', e);
+                            }
+                        }
+                    }).catch(function(error) {
+                        console.error('Error cargando carta desde IndexedDB:', error);
+                        // Intentar cargar desde localStorage como respaldo
+                        try {
+                            var backup = localStorage.getItem('carta_backup_' + ctrl.currentRequestId);
+                            if (backup) {
+                                var cartaBackup = JSON.parse(backup);
+                                if (cartaBackup && cartaBackup.items) {
+                                    ctrl.items = cartaBackup.items;
+                                    console.log('Cargado desde localStorage como respaldo');
+                                    $scope.$apply();
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('No se pudo cargar desde localStorage:', e);
+                        }
+                    });
+                }).catch(function(error) {
+                    console.error('Error inicializando DB:', error);
+                    // Intentar continuar de todas formas
+                });
+                
+                ctrl.view = 'fill';
+            } else if (viewParam === 'received' && requestId) {
+                ctrl.currentRequestId = String(requestId).trim();
+                ctrl.loadReceivedCarta();
+                ctrl.view = 'received';
+            }
+            
+            // Actualizar funciones de compartir para usar requestId
+            ctrl.shareCartaWhatsApp = async function() {
+                if (ctrl.items.length === 0) {
+                    alert('Agrega regalos a tu lista primero');
+                    return;
+                }
+                
+                var requestIdToUse = ctrl.currentRequestId;
+                if (!requestIdToUse) {
+                    var urlParams = new URLSearchParams(window.location.search);
+                    requestIdToUse = urlParams.get('requestId');
+                }
+                
+                if (requestIdToUse) {
+                    var carta = {
+                        requestId: requestIdToUse,
+                        items: ctrl.items,
+                        date: new Date().toISOString()
+                    };
+                    
+                    try {
+                        await saveToDB('finalizedCartas', carta);
+                    } catch (error) {
+                        console.error('Error guardando carta al compartir:', error);
+                    }
+                }
+                
+                var message = '🎅 *Mi Carta a Santa* 🎄\n\n';
+                ctrl.items.forEach(function(item, index) {
+                    message += '*' + (index + 1) + '. ' + item.description + '*\n';
+                    if (item.link) {
+                        message += '🔗 Ver producto\n';
+                    }
+                    message += '\n';
+                });
+                
+                var shareUrl = window.location.origin + window.location.pathname + '?requestId=' + encodeURIComponent(requestIdToUse) + '&view=received';
+                message += '\nVer carta completa: ' + shareUrl;
+                
+                window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
+            };
+            
+            ctrl.shareCartaFacebook = async function() {
+                if (ctrl.items.length === 0) {
+                    alert('Agrega regalos a tu lista primero');
+                    return;
+                }
+                
+                var requestIdToUse = ctrl.currentRequestId;
+                if (!requestIdToUse) {
+                    var urlParams = new URLSearchParams(window.location.search);
+                    requestIdToUse = urlParams.get('requestId');
+                }
+                
+                if (requestIdToUse) {
+                    var carta = {
+                        requestId: requestIdToUse,
+                        items: ctrl.items,
+                        date: new Date().toISOString()
+                    };
+                    
+                    try {
+                        await saveToDB('finalizedCartas', carta);
+                    } catch (error) {
+                        console.error('Error guardando carta al compartir:', error);
+                    }
+                }
+                
+                var shareUrl = window.location.origin + window.location.pathname + '?requestId=' + encodeURIComponent(requestIdToUse) + '&view=received';
+                window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(shareUrl), '_blank');
+            };
+            
+            // Crear solicitud
+            ctrl.createRequest = async function() {
+                if (!ctrl.phoneNumber || !ctrl.requestMessage || !ctrl.partnerName || !ctrl.partnerPhone) {
+                    alert('Por favor, completa todos los campos');
+                    return;
+                }
+                
+                // Generar ID único para la solicitud
+                var requestId = generateId();
+                
+                // Guardar solicitud
+                var request = {
+                    id: requestId,
+                    phone: ctrl.phoneNumber,
+                    partnerName: ctrl.partnerName,
+                    partnerPhone: ctrl.partnerPhone,
+                    message: ctrl.requestMessage,
+                    date: new Date().toISOString(),
+                    status: 'sent'
+                };
+                
+                try {
+                    // Guardar en IndexedDB
+                    await saveToDB('requests', request);
+                    
+                    alert('¡Solicitud guardada! 📁');
+                    
+                    // Generar link con requestId
+                    var baseUrl = window.location.origin + window.location.pathname;
+                    ctrl.shareLink = baseUrl + '?requestId=' + encodeURIComponent(requestId) + '&view=fill';
+                    ctrl.currentRequestId = requestId;
+                    $scope.$apply();
+                } catch (error) {
+                    console.error('Error guardando solicitud:', error);
+                    alert('Error al guardar la solicitud. Por favor, intenta de nuevo.');
+                }
+            };
+            
+            // Enviar solicitud directamente a la pareja por WhatsApp
+            ctrl.sendRequestToPartner = function() {
+                if (!ctrl.shareLink || !ctrl.partnerPhone) {
+                    alert('Por favor, crea la solicitud primero');
+                    return;
+                }
+                
+                var message = '¡Hola ' + ctrl.partnerName + '! 🎅\n\n';
+                message += ctrl.requestMessage + '\n\n';
+                message += 'Por favor, llena tu carta a Santa aquí:\n';
+                message += ctrl.shareLink;
+                
+                // Limpiar número de teléfono (solo números)
+                var cleanPhone = ctrl.partnerPhone.replace(/\D/g, '');
+                var whatsappUrl = 'https://wa.me/' + cleanPhone + '?text=' + encodeURIComponent(message);
+                window.open(whatsappUrl, '_blank');
+            };
+            
+            // Copiar link
+            ctrl.copyLink = function() {
+                var input = document.getElementById('shareLinkInput');
+                if (input) {
+                    input.select();
+                    input.setSelectionRange(0, 99999);
+                    document.execCommand('copy');
+                    alert('¡Link copiado al portapapeles! 📋');
+                }
+            };
+            
+            // Compartir por WhatsApp
+            ctrl.shareWhatsApp = function() {
+                var text = encodeURIComponent(ctrl.requestMessage + '\n\n' + ctrl.shareLink);
+                window.open('https://wa.me/?text=' + text, '_blank');
+            };
+            
+            // Compartir por Facebook
+            ctrl.shareFacebook = function() {
+                window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(ctrl.shareLink), '_blank');
+            };
+            
+            // Agregar item a la lista
+            ctrl.addItem = async function() {
+                if (!ctrl.newItem.description) {
+                    alert('Por favor, agrega una descripción');
+                    return;
+                }
+                
+                var item = {
+                    image: ctrl.newItem.image || '',
+                    link: ctrl.newItem.link || '',
+                    description: ctrl.newItem.description
+                };
+                
+                ctrl.items.push(item);
+                
+                // Guardar en IndexedDB
+                var requestIdToUse = ctrl.currentRequestId;
+                if (!requestIdToUse) {
+                    // Intentar obtener de la URL si no está en currentRequestId
+                    var urlParams = new URLSearchParams(window.location.search);
+                    requestIdToUse = urlParams.get('requestId');
+                    // Si se obtiene de la URL, guardarlo en currentRequestId
+                    if (requestIdToUse) {
+                        ctrl.currentRequestId = requestIdToUse;
+                    }
+                }
+                
+                if (!requestIdToUse || requestIdToUse === null || requestIdToUse === undefined || requestIdToUse === '') {
+                    console.error('No se pudo obtener requestId para guardar. requestId:', requestIdToUse);
+                    alert('Error: No se encontró el ID de la solicitud. Por favor, recarga la página desde el link original.');
+                    return;
+                }
+                
+                // Validar que requestId sea un string válido
+                if (typeof requestIdToUse !== 'string' || requestIdToUse.trim() === '') {
+                    console.error('requestId no es válido:', requestIdToUse, typeof requestIdToUse);
+                    alert('Error: El ID de la solicitud no es válido. Por favor, recarga la página.');
+                    return;
+                }
+                
+                // Intentar guardar en IndexedDB, pero no bloquear si falla
+                try {
+                    var cartaData = {
+                        requestId: String(requestIdToUse).trim(), // Asegurar que sea string
+                        items: ctrl.items,
+                        date: new Date().toISOString()
+                    };
+                    
+                    console.log('Intentando guardar carta con requestId:', cartaData.requestId);
+                    await saveToDB('cartas', cartaData);
+                    console.log('Carta guardada exitosamente en IndexedDB');
+                    
+                    // También guardar en localStorage como respaldo
+                    try {
+                        localStorage.setItem('carta_backup_' + requestIdToUse, JSON.stringify(cartaData));
+                    } catch (e) {
+                        console.warn('No se pudo guardar en localStorage:', e);
+                    }
+                    
+                    // Mostrar mensaje de éxito (opcional, no bloqueante)
+                    // El item ya se agregó visualmente, así que no es necesario
+                } catch (error) {
+                    console.error('Error guardando item en IndexedDB:', error);
+                    console.error('requestId usado:', requestIdToUse);
+                    console.error('Tipo de requestId:', typeof requestIdToUse);
+                    
+                    // Intentar guardar en localStorage como respaldo
+                    try {
+                        var cartaData = {
+                            requestId: String(requestIdToUse).trim(),
+                            items: ctrl.items,
+                            date: new Date().toISOString()
+                        };
+                        localStorage.setItem('carta_backup_' + requestIdToUse, JSON.stringify(cartaData));
+                        console.log('Guardado en localStorage como respaldo');
+                    } catch (e) {
+                        console.warn('No se pudo guardar ni en IndexedDB ni en localStorage');
+                    }
+                    
+                    // No bloquear al usuario, solo mostrar warning
+                    console.warn('No se pudo guardar en IndexedDB, pero los items se mantienen en memoria');
+                    
+                    // Si es un error de keyPath, sugerir limpiar la base de datos
+                    if (error.message && error.message.includes('key path')) {
+                        console.warn('PROBLEMA DE BASE DE DATOS DETECTADO');
+                        console.warn('Para solucionarlo:');
+                        console.warn('1. Abre F12 > Application > IndexedDB');
+                        console.warn('2. Elimina "CartaSantaDB"');
+                        console.warn('3. Recarga la página');
+                        // No mostrar alert bloqueante, solo en consola
+                    }
+                    // Continuar sin bloquear - los items están en memoria
+                }
+                
+                // Limpiar formulario
+                ctrl.newItem = {
+                    image: '',
+                    link: '',
+                    description: ''
+                };
+            };
+            
+            // Eliminar item
+            ctrl.removeItem = async function(index) {
+                if (confirm('¿Estás seguro de eliminar este regalo?')) {
+                    ctrl.items.splice(index, 1);
+                    var requestIdToUse = ctrl.currentRequestId;
+                    if (!requestIdToUse) {
+                        var urlParams = new URLSearchParams(window.location.search);
+                        requestIdToUse = urlParams.get('requestId');
+                        if (requestIdToUse) {
+                            ctrl.currentRequestId = requestIdToUse;
+                        }
+                    }
+                    
+                    if (!requestIdToUse) {
+                        console.error('No se pudo obtener requestId para guardar después de eliminar');
+                        return;
+                    }
+                    
+                    try {
+                        var cartaData = {
+                            requestId: requestIdToUse,
+                            items: ctrl.items,
+                            date: new Date().toISOString()
+                        };
+                        await saveToDB('cartas', cartaData);
+                        // También guardar en localStorage como respaldo
+                        try {
+                            localStorage.setItem('carta_backup_' + requestIdToUse, JSON.stringify(cartaData));
+                        } catch (e) {
+                            // Ignorar errores de localStorage
+                        }
+                    } catch (error) {
+                        console.error('Error guardando después de eliminar:', error);
+                        // Intentar guardar en localStorage como respaldo
+                        try {
+                            var cartaData = {
+                                requestId: requestIdToUse,
+                                items: ctrl.items,
+                                date: new Date().toISOString()
+                            };
+                            localStorage.setItem('carta_backup_' + requestIdToUse, JSON.stringify(cartaData));
+                        } catch (e) {
+                            // Ignorar
+                        }
+                        // No bloquear, los items están en memoria
+                        console.warn('No se pudo guardar en IndexedDB después de eliminar, pero el item fue eliminado de la lista');
+                    }
+                }
+            };
+            
+            // Finalizar carta
+            ctrl.finalizeCarta = async function() {
+                if (ctrl.items.length === 0) {
+                    alert('Agrega al menos un regalo a tu lista');
+                    return;
+                }
+                
+                var requestIdToUse = ctrl.currentRequestId;
+                if (!requestIdToUse) {
+                    // Intentar obtener de la URL si no está en currentRequestId
+                    var urlParams = new URLSearchParams(window.location.search);
+                    requestIdToUse = urlParams.get('requestId');
+                }
+                
+                if (!requestIdToUse) {
+                    alert('Error: No se encontró el ID de la solicitud');
+                    return;
+                }
+                
+                // Obtener información de la solicitud para saber el teléfono del hombre
+                var requestData = await readFromDB('requests', requestIdToUse);
+                var manPhone = null;
+                var partnerName = 'tu pareja';
+                
+                if (requestData) {
+                    manPhone = requestData.phone;
+                    partnerName = requestData.partnerName || 'tu pareja';
+                } else {
+                    console.warn('Solicitud no encontrada, pero se guardará la carta de todas formas');
+                }
+                
+                // Guardar carta finalizada
+                var carta = {
+                    requestId: requestIdToUse,
+                    manPhone: manPhone,
+                    items: ctrl.items,
+                    date: new Date().toISOString()
+                };
+                
+                try {
+                    // Guardar en IndexedDB
+                    await saveToDB('finalizedCartas', carta);
+                    
+                    // Actualizar estado de la solicitud si existe
+                    if (requestData) {
+                        requestData.status = 'completed';
+                        await saveToDB('requests', requestData);
+                    }
+                    
+                    // Enviar automáticamente al hombre por WhatsApp si tenemos los datos
+                    if (manPhone) {
+                        var message = '🎅 ¡Hola! ' + partnerName + ' ha completado su carta a Santa! 🎄\n\n';
+                        message += 'Lista de regalos:\n\n';
+                        ctrl.items.forEach(function(item, index) {
+                            message += (index + 1) + '. ' + item.description + '\n';
+                            if (item.link) {
+                                message += '   🔗 Ver producto\n';
+                            }
+                            message += '\n';
+                        });
+                        message += '\nVer carta completa: ' + window.location.origin + window.location.pathname + '?requestId=' + encodeURIComponent(requestIdToUse) + '&view=received';
+                        
+                        var cleanManPhone = manPhone.replace(/\D/g, '');
+                        var whatsappUrl = 'https://wa.me/' + cleanManPhone + '?text=' + encodeURIComponent(message);
+                        window.open(whatsappUrl, '_blank');
+                        
+                        alert('¡Tu carta ha sido guardada y enviada! 🎉');
+                    } else {
+                        alert('¡Tu carta ha sido guardada! 🎉 Puedes compartirla usando los botones de abajo.');
+                    }
+                } catch (error) {
+                    console.error('Error guardando carta:', error);
+                    alert('Error al guardar la carta. Por favor, intenta de nuevo.');
+                }
+            };
+            
+            
+            // Ver carta recibida
+            // Enviar PDF por WhatsApp
+            ctrl.sendPDFWhatsApp = function() {
+                if (!ctrl.receivedCarta) return;
+                
+                var requestIdToUse = ctrl.currentRequestId;
+                if (!requestIdToUse) {
+                    var urlParams = new URLSearchParams(window.location.search);
+                    requestIdToUse = urlParams.get('requestId');
+                }
+                if (!requestIdToUse) return;
+                
+                // Verificar que jsPDF esté disponible
+                var jsPDFClass = null;
+                if (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+                    jsPDFClass = window.jspdf.jsPDF;
+                } else if (typeof jsPDF !== 'undefined' && jsPDF.jsPDF) {
+                    jsPDFClass = jsPDF.jsPDF;
+                } else {
+                    alert('Error: La librería jsPDF no está cargada. Por favor, recarga la página.');
+                    return;
+                }
+                
+                // Generar PDF
+                html2canvas(document.getElementById('cartaContent')).then(function(canvas) {
+                    var imgData = canvas.toDataURL('image/png');
+                    var pdf = new jsPDFClass('p', 'mm', 'a4');
+                    var imgWidth = 210;
+                    var pageHeight = 295;
+                    var imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    var heightLeft = imgHeight;
+                    var position = 0;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    // Obtener teléfono del hombre desde la solicitud
+                    readFromDB('requests', requestIdToUse).then(function(requestData) {
+                        if (requestData && requestData.phone) {
+                            var cleanPhone = requestData.phone.replace(/\D/g, '');
+                            var message = encodeURIComponent('🎅 Aquí está tu carta a Santa! 🎄');
+                            var shareUrl = window.location.origin + window.location.pathname + '?requestId=' + encodeURIComponent(requestIdToUse) + '&view=received';
+                            window.open('https://wa.me/' + cleanPhone + '?text=' + encodeURIComponent(message + '\n\n' + shareUrl), '_blank');
+                        }
+                        
+                        // Descargar PDF
+                        pdf.save('carta-a-santa.pdf');
+                    });
+                });
+            };
+            
+            // Descargar PDF
+            ctrl.downloadPDF = function() {
+                if (!ctrl.receivedCarta) return;
+                
+                // Verificar que jsPDF esté disponible
+                var jsPDFClass = null;
+                if (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+                    jsPDFClass = window.jspdf.jsPDF;
+                } else if (typeof jsPDF !== 'undefined' && jsPDF.jsPDF) {
+                    jsPDFClass = jsPDF.jsPDF;
+                } else {
+                    alert('Error: La librería jsPDF no está cargada. Por favor, recarga la página.');
+                    return;
+                }
+                
+                // Generar PDF
+                html2canvas(document.getElementById('cartaContent')).then(function(canvas) {
+                    var imgData = canvas.toDataURL('image/png');
+                    var pdf = new jsPDFClass('p', 'mm', 'a4');
+                    var imgWidth = 210;
+                    var pageHeight = 295;
+                    var imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    var heightLeft = imgHeight;
+                    var position = 0;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    // Descargar PDF
+                    pdf.save('carta-a-santa.pdf');
+                });
+            };
+            
+            // Enviar HTML por WhatsApp
+            ctrl.sendHTMLWhatsApp = function() {
+                if (!ctrl.receivedCarta) return;
+                
+                var requestIdToUse = ctrl.currentRequestId;
+                if (!requestIdToUse) {
+                    var urlParams = new URLSearchParams(window.location.search);
+                    requestIdToUse = urlParams.get('requestId');
+                }
+                if (!requestIdToUse) return;
+                
+                readFromDB('requests', requestIdToUse).then(function(requestData) {
+                    if (requestData && requestData.phone) {
+                        var shareUrl = window.location.origin + window.location.pathname + '?requestId=' + encodeURIComponent(requestIdToUse) + '&view=received';
+                        var message = encodeURIComponent('🎅 Aquí está tu carta a Santa! 🎄\n\n' + shareUrl);
+                        var cleanPhone = requestData.phone.replace(/\D/g, '');
+                        window.open('https://wa.me/' + cleanPhone + '?text=' + message, '_blank');
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>
