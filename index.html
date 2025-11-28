@@ -114,14 +114,16 @@
         
         .welcome-message {
             text-align: center;
-            color: #333;
+            color: #ffffff;
             font-size: 1.2rem;
             margin-bottom: 30px;
             line-height: 1.8;
-            background: linear-gradient(135deg, #fff9e6 0%, #ffe6e6 100%);
+            background: rgba(255, 255, 255, 0.15);
             padding: 20px;
             border-radius: 15px;
-            border-left: 5px solid #c41e3a;
+            border-left: 5px solid #ffd700;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
         }
         
         .btn-primary-custom {
@@ -179,12 +181,23 @@
             transition: all 0.3s;
             background: white;
             font-size: 1rem;
+            color: #333;
+        }
+        
+        .form-control-custom::placeholder {
+            color: #999;
+            opacity: 0.8;
         }
         
         .form-control-custom:focus {
             border-color: #c41e3a;
             box-shadow: 0 0 0 0.3rem rgba(196, 30, 58, 0.25);
             background: #fff9e6;
+            color: #333;
+        }
+        
+        .form-control-custom:focus::placeholder {
+            color: #bbb;
         }
         
         .item-card {
@@ -659,9 +672,15 @@
         
         .label-custom {
             font-weight: 600;
-            color: #333;
+            color: #ffffff;
             margin-bottom: 8px;
             display: block;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .label-custom i {
+            color: #ffd700;
+            margin-right: 8px;
         }
         
         .star-decoration {
@@ -736,8 +755,8 @@
                         </div>
                         
                         <div class="mb-3 text-end">
-                            <a href="#" ng-click="ctrl.showForgotPassword()" class="text-decoration-none" style="color: #c41e3a; font-size: 0.9rem;">
-                                <i class="fas fa-key"></i> ¿Olvidaste tu contraseña?
+                            <a href="#" ng-click="ctrl.showForgotPassword()" class="text-decoration-none" style="color: #ffffff; font-size: 0.9rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                                <i class="fas fa-key" style="color: #ffd700;"></i> ¿Olvidaste tu contraseña?
                             </a>
                         </div>
                         
